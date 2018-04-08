@@ -129,6 +129,12 @@ def retrieve_images_and_labels(img_data):
         images.append(center_img_data)
         measurements.append(measurement)
 
+        image_flipped = np.fliplr(center_img_data)
+        measurement_flipped = -measurement
+
+        images.append(image_flipped)
+        measurements.append(measurement_flipped)
+
     return images, measurements
 
 def _retrieve_steering_angle(data):
@@ -136,6 +142,7 @@ def _retrieve_steering_angle(data):
 
 
 img_data = load_images()
+
 # img_data = process_pipeline(img_data)
 # WE can't do any kind of grayscale preprocessing since the simulator won't
 # feed those images in to the model
@@ -144,11 +151,10 @@ images, measurements = retrieve_images_and_labels(img_data)
 
 X = np.array(images)
 y = np.array(measurements)
-
 # model = model_basic()
 model = model_lenet()
 model.compile(loss='mse', optimizer='adam')
-model.fit(X, y, validation_split=0.2, shuffle=True)
+model.fit(X, y, validation_split=0.2, shuffle=True, nb_epoch=6)
 
 model.save('model.h5')
 
