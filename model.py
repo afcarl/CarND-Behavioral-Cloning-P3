@@ -24,6 +24,9 @@ def grayscale(img):
 # remove color channels. image shape should now be (320,160,1)
     return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
+def blur(img):
+    return cv2.blur(img, (6,6))
+    
 def preprocess(img):
     # this is our main preprocess pipeline
 
@@ -37,8 +40,9 @@ def preprocess(img):
 
     # TODO: Cut image sizes, add filter polygons
     # img3 = filter_images(img2)
+    img3 = blur(img2)
 
-    return img2
+    return img3
 
 def load_images():
     image_directory = os.path.join(os.getcwd(), IMG_PATH)
@@ -154,7 +158,7 @@ y = np.array(measurements)
 # model = model_basic()
 model = model_lenet()
 model.compile(loss='mse', optimizer='adam')
-model.fit(X, y, validation_split=0.2, shuffle=True, nb_epoch=6)
+model.fit(X, y, validation_split=0.2, shuffle=True, nb_epoch=7)
 
 model.save('model.h5')
 
