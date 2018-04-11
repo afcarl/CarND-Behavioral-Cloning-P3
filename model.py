@@ -66,38 +66,38 @@ def load_images():
     with open('driving_log.csv') as csvfile:
         reader = csv.reader(csvfile)
         for line in reader:
-            lines.append(line)
+            # lines.append(line)
 
-    image_data = list()
+            row = line
+            # for row in tqdm(lines):
+            # center_image = cv2.imread(row['center_camera_fp'])
+            # left_image = cv2.imread(row['left_camera_fp'])
+            # right_image = ndimage.imread(row['right_camera_fp'])
 
-    for row in tqdm(lines):
-        # center_image = cv2.imread(row['center_camera_fp'])
-        # left_image = cv2.imread(row['left_camera_fp'])
-        # right_image = ndimage.imread(row['right_camera_fp'])
+            center_image_fp = _get_img_path(row[0])
+            center_image = cv2.imread(center_image_fp)
 
-        center_image_fp = _get_img_path(row[0])
-        center_image = cv2.imread(center_image_fp)
+            center_image_fp = _get_img_path(row[1])
+            left_image = cv2.imread(center_image_fp)
 
-        center_image_fp = _get_img_path(row[1])
-        left_image = cv2.imread(center_image_fp)
+            center_image_fp = _get_img_path(row[2])
+            right_image = cv2.imread(center_image_fp)
 
-        center_image_fp = _get_img_path(row[2])
-        right_image = cv2.imread(center_image_fp)
+            # each of these should contain an nd array
 
-        # each of these should contain an nd array
+            data = dict()
+            data['X'] = {'center_image': center_image,
+                         'left_image': left_image,
+                         'right_image': right_image}
+            data['y'] = {'steering_angle': row[3],
+                         'throttle': row[4],
+                         'brake': row[5],
+                         'speed': row[6]}
 
-        data = dict()
-        data['X'] = {'center_image': center_image,
-                     'left_image': left_image,
-                     'right_image': right_image}
-        data['y'] = {'steering_angle': row[3],
-                     'throttle': row[4],
-                     'brake': row[5],
-                     'speed': row[6]}
+            # image_data.append(data)
+            yield data
 
-        image_data.append(data)
-
-    return image_data
+    # return image_data
     # returns a list of dicts, each dict containing pointers to the ndarrays
     # for each of the 3 camera images, and labels for steering, braking
 
@@ -220,10 +220,12 @@ def model_nvidia(input_shape=None):
 def _retrieve_center_image(data):
     return data['X']['center_image']
 
-def retrieve_images_and_labels(img_data):
+def retrieve_images_and_labels():
+    #img_data = load_images()
+
     images = []
     measurements = []
-    for img in img_data:
+    for img in tqdm(load_images()):
         center_img_data = _retrieve_center_image(data=img)
         measurement = _retrieve_steering_angle(data=img)
         center_img_data = process_pipeline(center_img_data)
@@ -243,15 +245,13 @@ def _retrieve_steering_angle(data):
     return float(data['y']['steering_angle'])
 
 
-img_data = load_images()
 
 # img_data = process_pipeline(img_data)
 # WE can't do any kind of grayscale preprocessing since the simulator won't
 # feed those images in to the model
-images, measurements = retrieve_images_and_labels(img_data)
+images, measurements = retrieve_images_and_labels()
 
-#X = np.array(images)
-X = images
+X = np.array(images)
 y = np.array(measurements)
 # model = model_basic()
 model = model_nvidia(input_shape=(160,320,3))
