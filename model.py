@@ -11,6 +11,7 @@ import pandas as pd
 # image processing packages
 import cv2
 import matplotlib.pyplot as plt
+import sklearn
 
 img_data = []
 IMG_PATH = "IMG"
@@ -62,6 +63,7 @@ def _get_img_path(orig_path):
 def load_images():
     image_directory = os.path.join(os.getcwd(), IMG_PATH)
     lines = list()
+    i = 0
 
     with open('driving_log.csv') as csvfile:
         reader = csv.reader(csvfile)
@@ -96,6 +98,7 @@ def load_images():
 
             # image_data.append(data)
             yield data
+
 
     # return image_data
     # returns a list of dicts, each dict containing pointers to the ndarrays
@@ -220,12 +223,21 @@ def model_nvidia(input_shape=None):
 def _retrieve_center_image(data):
     return data['X']['center_image']
 
-def retrieve_images_and_labels():
-    #img_data = load_images()
+def retrieve_images_and_labels(batch_size=32):
 
     images = []
     measurements = []
-    for img in tqdm(load_images()):
+    i = 0
+    for img in load_images():
+        if i == batch_size:
+            images = np.array(images)
+            measurements = np.array(measurements)
+            images, measurements = sklearn.utils.shuffle(images, measurements)
+            yield (images, measurements)
+            images = []
+            measurements = []
+            i = 0
+
         center_img_data = _retrieve_center_image(data=img)
         measurement = _retrieve_steering_angle(data=img)
         center_img_data = process_pipeline(center_img_data)
@@ -236,27 +248,53 @@ def retrieve_images_and_labels():
         image_flipped = np.fliplr(center_img_data)
         measurement_flipped = -measurement
 
+        # yield (np.array(center_img_data), np.array(measurement))
+
         images.append(image_flipped)
         measurements.append(measurement_flipped)
+        # yield (np.array(image_flipped), np.array(measurement_flipped))
+        i += 1
 
-    return images, measurements
+
+
+    # return images, measurements
 
 def _retrieve_steering_angle(data):
     return float(data['y']['steering_angle'])
 
+def get_number_of_samples():
+    data_dir_path = os.path.join( os.getcwd(), IMG_PATH)
+    return len([name for name in os.listdir(data_dir_path)])
 
 
 # img_data = process_pipeline(img_data)
 # WE can't do any kind of grayscale preprocessing since the simulator won't
 # feed those images in to the model
-images, measurements = retrieve_images_and_labels()
+# images, measurements = retrieve_images_and_labels()
+#
+# X = np.array(images)
+# y = np.array(measurements)
+#
+# X = np.array([images[0]])
+# y = np.array([measurements[0]])
+#
+# for image in images:
+#     image = np.array([image])
+#     X = np.concatenate( (X, image) )
+#
+# for measurement in measurements:
+#     measurement = np.array([measurement])
+#     y = np.concatenate( (y, measurement) )
 
-X = np.array(images)
-y = np.array(measurements)
 # model = model_basic()
+
+number_of_samples = get_number_of_samples() * 2
+
 model = model_nvidia(input_shape=(160,320,3))
 model.compile(loss='mse', optimizer='adam')
-model.fit(X, y, validation_split=0.2, shuffle=True, nb_epoch=2)
+model.fit_generator(generator=retrieve_images_and_labels(), samples_per_epoch=number_of_samples,
+    # validation_split=0.2, shuffle=True,
+    nb_epoch=2)
 
 model.save('model.h5')
 
