@@ -54,6 +54,11 @@ def preprocess(img):
 
     return img3
 
+def _get_img_path(orig_path):
+    jpg_file_path = 'IMG/' +  orig_path.split('IMG')[1]
+    center_image_fp = os.path.join(os.getcwd(), jpg_file_path)
+    return center_image_fp
+
 def load_images():
     image_directory = os.path.join(os.getcwd(), IMG_PATH)
     lines = list()
@@ -69,9 +74,16 @@ def load_images():
         # center_image = cv2.imread(row['center_camera_fp'])
         # left_image = cv2.imread(row['left_camera_fp'])
         # right_image = ndimage.imread(row['right_camera_fp'])
-        center_image = cv2.imread(row[0])
-        left_image = cv2.imread(row[1])
-        right_image = cv2.imread(row[2])
+
+        center_image_fp = _get_img_path(row[0])
+        center_image = cv2.imread(center_image_fp)
+
+        center_image_fp = _get_img_path(row[1])
+        left_image = cv2.imread(center_image_fp)
+
+        center_image_fp = _get_img_path(row[2])
+        right_image = cv2.imread(center_image_fp)
+
         # each of these should contain an nd array
 
         data = dict()
@@ -214,7 +226,6 @@ def retrieve_images_and_labels(img_data):
     for img in img_data:
         center_img_data = _retrieve_center_image(data=img)
         measurement = _retrieve_steering_angle(data=img)
-
         center_img_data = process_pipeline(center_img_data)
 
         images.append(center_img_data)
@@ -239,8 +250,8 @@ img_data = load_images()
 # feed those images in to the model
 images, measurements = retrieve_images_and_labels(img_data)
 
-
-X = np.array(images)
+#X = np.array(images)
+X = images
 y = np.array(measurements)
 # model = model_basic()
 model = model_nvidia(input_shape=(160,320,3))
