@@ -12,6 +12,8 @@ import pandas as pd
 import cv2
 import matplotlib.pyplot as plt
 import sklearn
+from sklearn.model_selection import train_test_split
+from random import shuffle
 
 img_data = []
 IMG_PATH = "IMG"
@@ -60,8 +62,63 @@ def _get_img_path(orig_path):
     center_image_fp = os.path.join(os.getcwd(), jpg_file_path)
     return center_image_fp
 
+def load_images_generator(batch_size=32):
+    image_directory = os.path.join(os.getcwd(), IMG_PATH)
+
+    i = 0
+    measurements = []
+    images = []
+    with open('driving_log.csv') as csvfile:
+        reader = csv.reader(csvfile)
+        for row in reader:
+            if i == batch_size:
+                images = np.array(images)
+                measurements = np.array(measurements)
+                images, measurements = sklearn.utils.shuffle(images, measurements)
+                yield (images, measurements)
+                images = []
+                measurements = []
+                i = 0
+
+            center_image_fp = _get_img_path(row[0])
+            center_image = cv2.imread(center_image_fp)
+
+            center_image_fp = _get_img_path(row[1])
+            left_image = cv2.imread(center_image_fp)
+
+            center_image_fp = _get_img_path(row[2])
+            right_image = cv2.imread(center_image_fp)
+
+            # each of these should contain an nd array
+
+            data = dict()
+            data['X'] = {'center_image': center_image,
+                         'left_image': left_image,
+                         'right_image': right_image}
+            data['y'] = {'steering_angle': row[3],
+                         'throttle': row[4],
+                         'brake': row[5],
+                         'speed': row[6]}
+
+            # image_data.append(data)
+            center_img_data = _retrieve_center_image(data=data)
+            measurement = _retrieve_steering_angle(data=data)
+            center_img_data = process_pipeline(center_img_data)
+
+            images.append(center_img_data)
+            measurements.append(measurement)
+
+            # image_flipped = np.fliplr(center_img_data)
+            # measurement_flipped = -measurement
+            #
+            # # yield (np.array(center_img_data), np.array(measurement))
+            #
+            # images.append(image_flipped)
+            # measurements.append(measurement_flipped)
+
 def load_images():
     image_directory = os.path.join(os.getcwd(), IMG_PATH)
+
     lines = list()
     i = 0
 
@@ -288,13 +345,52 @@ def get_number_of_samples():
 
 # model = model_basic()
 
-number_of_samples = get_number_of_samples() * 2
+def get_samples():
+    samples = []
+    with open('./driving_log.csv') as csvfile:
+        reader = csv.reader(csvfile)
+        for line in reader:
+            samples.append(line)
+    return samples
+
+samples = get_samples()
+train_samples, validation_samples = train_test_split(samples, test_size=0.2)
+
+def generator(samples, batch_size=32):
+    num_samples = len(samples)
+    while 1: # Loop forever so the generator never terminates
+        shuffle(samples)
+        for offset in range(0, num_samples, batch_size):
+            batch_samples = samples[offset:offset+batch_size]
+
+            images = []
+            angles = []
+            for batch_sample in batch_samples:
+                name = './IMG/'+batch_sample[0].split('/')[-1]
+                center_image = cv2.imread(name)
+                center_angle = float(batch_sample[3])
+                
+                center_image = preprocess(center_image)
+                images.append(center_image)
+                angles.append(center_angle)
+
+            # trim image to only see section with road
+            X_train = np.array(images)
+            y_train = np.array(angles)
+            yield sklearn.utils.shuffle(X_train, y_train)
+
+train_generator = generator(train_samples, batch_size=32)
+validation_generator = generator(validation_samples, batch_size=32)
 
 model = model_nvidia(input_shape=(160,320,3))
 model.compile(loss='mse', optimizer='adam')
-model.fit_generator(generator=retrieve_images_and_labels(), samples_per_epoch=number_of_samples,
-    # validation_split=0.2, shuffle=True,
-    nb_epoch=2)
+model.fit_generator(train_generator, samples_per_epoch=len(train_samples),
+    validation_data=validation_generator,
+    nb_val_samples=len(validation_samples), nb_epoch=3)
+# model.compile(loss='mse', optimizer='adam')
+# model.fit_generator(generator=load_images_generator(), samples_per_epoch=number_of_samples,
+#     # validation_split=0.2, shuffle=True,
+#     nb_epoch=2)
 
 model.save('model.h5')
 
