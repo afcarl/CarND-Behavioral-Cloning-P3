@@ -392,14 +392,14 @@ def generator(samples, batch_size=32):
             y_train = np.array(angles)
             yield sklearn.utils.shuffle(X_train, y_train)
 
-train_generator = generator(train_samples, batch_size=96)
-validation_generator = generator(validation_samples, batch_size=96)
+train_generator = generator(train_samples, batch_size=32)
+validation_generator = generator(validation_samples, batch_size=32)
 
 model = model_nvidia(input_shape=(160,320,3))
 model.compile(loss='mse', optimizer='adam')
-model.fit_generator(train_generator, samples_per_epoch=len(train_samples),
+model.fit_generator(train_generator, samples_per_epoch=len(train_samples)*3,
     validation_data=validation_generator,
-    nb_val_samples=len(validation_samples), nb_epoch=3)
+    nb_val_samples=len(validation_samples)*3, nb_epoch=4)
 # model.compile(loss='mse', optimizer='adam')
 # model.fit_generator(generator=load_images_generator(), samples_per_epoch=number_of_samples,
 #     # validation_split=0.2, shuffle=True,
