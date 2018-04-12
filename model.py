@@ -369,18 +369,31 @@ def generator(samples, batch_size=32):
                 name = './IMG/'+batch_sample[0].split('/')[-1]
                 center_image = cv2.imread(name)
                 center_angle = float(batch_sample[3])
-                
                 center_image = preprocess(center_image)
                 images.append(center_image)
                 angles.append(center_angle)
+
+                name = './IMG/'+batch_sample[1].split('/')[-1]
+                left_image = cv2.imread(name)
+                left_angle = float(batch_sample[3]) + 0.2
+                left_image = preprocess(left_image)
+                images.append(left_image)
+                angles.append(left_angle)
+
+                name = './IMG/'+batch_sample[2].split('/')[-1]
+                right_image = cv2.imread(name)
+                right_angle = float(batch_sample[3]) - 0.2
+                right_image = preprocess(right_image)
+                images.append(right_image)
+                angles.append(right_angle)
 
             # trim image to only see section with road
             X_train = np.array(images)
             y_train = np.array(angles)
             yield sklearn.utils.shuffle(X_train, y_train)
 
-train_generator = generator(train_samples, batch_size=32)
-validation_generator = generator(validation_samples, batch_size=32)
+train_generator = generator(train_samples, batch_size=96)
+validation_generator = generator(validation_samples, batch_size=96)
 
 model = model_nvidia(input_shape=(160,320,3))
 model.compile(loss='mse', optimizer='adam')
