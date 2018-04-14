@@ -263,17 +263,17 @@ def model_nvidia(input_shape=None):
     # model.add(Convolution2D(64, 1, 1, activation=activation))
     # model.add(MaxPooling2D())
     model.add(Flatten())
-    model.add(Dense(1164))
-    model.add(Dropout(0.5))
+    # model.add(Dense(1164))
+    # model.add(Dropout(0.5))
 
     model.add(Dense(100))
-    model.add(Dropout(0.5))
+    # model.add(Dropout(0.5))
 
     model.add(Dense(50))
-    model.add(Dropout(0.5))
+    # model.add(Dropout(0.5))
 
     model.add(Dense(10))
-    model.add(Dropout(0.5))
+    # model.add(Dropout(0.5))
 
     model.add(Dense(1))
     return model
