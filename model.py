@@ -203,6 +203,7 @@ def model_lenet(input_shape=None):
 def model_nvidia(input_shape=None):
     from keras.models import Sequential
     from keras.layers import Flatten, Dense, Convolution2D, MaxPooling2D, Dropout, BatchNormalization, Activation
+    from keras.layers import Flatten, Dense, Lambda, Cropping2D
 
     # activation = "relu"
     # model = Sequential()
@@ -260,8 +261,8 @@ def model_nvidia(input_shape=None):
     model.add(MaxPooling2D())
     model.add(Convolution2D(64, 3,3, activation=activation))
     model.add(MaxPooling2D())
-    # model.add(Convolution2D(64, 1, 1, activation=activation))
-    # model.add(MaxPooling2D())
+    model.add(Convolution2D(64, 1, 1, activation=activation))
+    model.add(MaxPooling2D())
     model.add(Flatten())
     # model.add(Dense(1164))
     # model.add(Dropout(0.5))
