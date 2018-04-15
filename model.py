@@ -47,11 +47,11 @@ def preprocess(img):
     # error: (-215) depth == CV_8U || depth == CV_16U || depth == CV_32F
     # in function cvtColor
 
-    img2 = normalize(img1)
+    # img2 = normalize(img1)
 
     # TODO: Cut image sizes, add filter polygons
     # img3 = filter_images(img2)
-    img3 = blur(img2)
+    img3 = blur(img1)
 
     # img4 = crop_img(img3)
 
