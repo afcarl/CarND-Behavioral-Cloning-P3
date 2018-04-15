@@ -1,0 +1,25 @@
+Fri apr 6 12:30 AM
+
+Just Running around the track in laps seems to not really give us good val_loss
+Recording strategically going along straight lines, going through corners
+both ways seems to give us good validation loss.
+
+I think it was overfitting.
+
+Using LeNet
+
+using shorter data set, I see that we have 10 epochs, 1292 image sets, val_los 108
+
+Fri Apr 6 2018 1:30 AM
+
+Train with more curves and straight aways but only those. For some reason
+the most recent data had strong right ward bias
+
+Sat Apr 7 2018 12:58 AM
+
+Trying out some more training data, did a complete lap with periodic training
+flipped over images and steering angles.
+
+Sat Apr 7 2018 11:26 PM
+
+3 laps full speed. Now trying to add recoveries
